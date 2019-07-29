@@ -9,6 +9,7 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,14 @@ import org.springframework.stereotype.Service;
 public class ComicWatcherService {
 	@Value("${raw.comics.dir}")
 	String dirName;
+	@Value("${exchange.name}")
+	String exchangeName;
+
+	private final RabbitTemplate rabbitTemplate;
+
+	public ComicWatcherService(RabbitTemplate rabbitTemplate) {
+		this.rabbitTemplate = rabbitTemplate;
+	}
 
 	public void watch() {
 		try {
@@ -29,6 +38,7 @@ public class ComicWatcherService {
 				for (WatchEvent<?> event : key.pollEvents()) {
 					System.out.println("New Comic Found!");
 					System.out.println("File: " + event.context());
+					rabbitTemplate.convertAndSend(exchangeName, "comic.found", event.context());
 				}
 				key.reset();
 			}
