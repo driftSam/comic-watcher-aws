@@ -20,13 +20,7 @@ public class ComicWatcherService {
 	@Value("${exchange.name}")
 	String exchangeName;
 
-	private final RabbitTemplate rabbitTemplate;
-
-	public ComicWatcherService(RabbitTemplate rabbitTemplate) {
-		this.rabbitTemplate = rabbitTemplate;
-	}
-
-	public void watch() {
+	public void watch(RabbitTemplate rabbitTemplate) {
 		try {
 			WatchService watchService = FileSystems.getDefault().newWatchService();
 			Path rawDir = Paths.get(dirName);
@@ -38,7 +32,9 @@ public class ComicWatcherService {
 				for (WatchEvent<?> event : key.pollEvents()) {
 					System.out.println("New Comic Found!");
 					System.out.println("File: " + event.context());
-					rabbitTemplate.convertAndSend(exchangeName, "comic.found", event.context());
+					Path comicPath = Paths.get(rawDir.toString(), event.context().toString());
+					System.out.println(comicPath.toString());
+					rabbitTemplate.convertAndSend(exchangeName, "comic.found", comicPath.toString());
 				}
 				key.reset();
 			}

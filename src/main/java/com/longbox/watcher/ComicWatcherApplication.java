@@ -7,8 +7,8 @@ import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -27,6 +27,12 @@ public class ComicWatcherApplication implements CommandLineRunner {
 
 	static final String queueName = "comic.found";
 
+	private final RabbitTemplate rabbitTemplate;
+
+	public ComicWatcherApplication(RabbitTemplate rabbitTemplate) {
+		this.rabbitTemplate = rabbitTemplate;
+	}
+
 	@Bean
 	Queue queue() {
 		return new Queue(queueName, false);
@@ -43,8 +49,7 @@ public class ComicWatcherApplication implements CommandLineRunner {
 	}
 
 	@Bean
-	SimpleMessageListenerContainer container(ConnectionFactory connectionFactory,
-			MessageListenerAdapter listenerAdapter) {
+	SimpleMessageListenerContainer container(ConnectionFactory connectionFactory) {
 		SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory);
 		container.setQueueNames(queueName);
@@ -60,7 +65,7 @@ public class ComicWatcherApplication implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		LOG.info("watching");
-		service.watch();
+		service.watch(rabbitTemplate);
 	}
 
 }
