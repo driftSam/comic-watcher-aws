@@ -6,7 +6,6 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -21,15 +20,10 @@ public class ComicWatcherApplication implements CommandLineRunner {
 	@Autowired
 	ComicWatcherService service;
 
+	
 	static final String directExchangeName = "comic-exchange";
 
 	static final String queueName = "comic.found";
-
-	private final RabbitTemplate rabbitTemplate;
-
-	public ComicWatcherApplication(RabbitTemplate rabbitTemplate) {
-		this.rabbitTemplate = rabbitTemplate;
-	}
 
 	@Bean
 	Queue queue() {
@@ -43,7 +37,7 @@ public class ComicWatcherApplication implements CommandLineRunner {
 
 	@Bean
 	Binding binding(Queue queue, DirectExchange exchange) {
-		return BindingBuilder.bind(queue).to(exchange).with("comic.found");
+		return BindingBuilder.bind(queue).to(exchange).with(queueName);
 	}
 	
 	private static Logger LOG = LoggerFactory.getLogger(ComicWatcherApplication.class);
@@ -55,7 +49,7 @@ public class ComicWatcherApplication implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		LOG.info("watching");
-		service.watch(rabbitTemplate);
+		service.watch();
 	}
 
 }
