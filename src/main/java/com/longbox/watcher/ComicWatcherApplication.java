@@ -20,7 +20,6 @@ public class ComicWatcherApplication implements CommandLineRunner {
 	@Autowired
 	ComicWatcherService service;
 
-	
 	static final String directExchangeName = "comic-exchange";
 
 	static final String queueName = "comic.found";
@@ -37,9 +36,9 @@ public class ComicWatcherApplication implements CommandLineRunner {
 
 	@Bean
 	Binding binding(Queue queue, DirectExchange exchange) {
-		return BindingBuilder.bind(queue).to(exchange).with(queueName);
+		return BindingBuilder.bind(queue).to(exchange).with("found");
 	}
-	
+
 	private static Logger LOG = LoggerFactory.getLogger(ComicWatcherApplication.class);
 
 	public static void main(String[] args) {

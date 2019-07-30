@@ -18,13 +18,13 @@ import org.springframework.stereotype.Service;
 public class ComicWatcherService {
 	@Value("${raw.comics.dir}")
 	String dirName;
-	
+
 	@Value("${exchange.name}")
 	String exchangeName;
-	
+
 	@Value("${queue.name}")
 	String queueName;
-	
+
 	@Autowired
 	RabbitTemplate rabbitTemplate;
 
@@ -42,7 +42,7 @@ public class ComicWatcherService {
 					System.out.println("File: " + event.context());
 					Path comicPath = Paths.get(rawDir.toString(), event.context().toString());
 					System.out.println(comicPath.toString());
-					rabbitTemplate.convertAndSend(exchangeName, queueName, comicPath.toString());
+					rabbitTemplate.convertAndSend(exchangeName, "found", comicPath.toString());
 				}
 				key.reset();
 			}
