@@ -64,7 +64,7 @@ public class ComicWatcherService {
 						});
 					} else {
 						System.out.println("NOT DIR!");
-						sendMessage(Paths.get(rawDir.toString(), eventPath.toString()));
+						sendMessage(Paths.get(eventPath.toString()));
 					}
 				}
 				key.reset();
