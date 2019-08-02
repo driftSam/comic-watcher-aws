@@ -1,6 +1,9 @@
 package com.longbox.watcher.service;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,6 +44,11 @@ public class ComicWatcherService {
 					System.out.println("New Comic Found!");
 					System.out.println("File: " + event.context());
 					Path comicPath = Paths.get(rawDir.toString(), event.context().toString());
+					File lockFile = comicPath.toFile();
+					RandomAccessFile raf = new RandomAccessFile(lockFile, "rw");
+					FileChannel channel = raf.getChannel();
+					channel.lock();
+					raf.close();
 					System.out.println(comicPath.toString());
 					rabbitTemplate.convertAndSend(exchangeName, "found", comicPath.toString());
 				}
