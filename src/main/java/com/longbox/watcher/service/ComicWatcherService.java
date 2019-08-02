@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
@@ -32,26 +34,41 @@ public class ComicWatcherService {
 	RabbitTemplate rabbitTemplate;
 
 	public void watch() {
+		WatchService watchService;
 		try {
-			WatchService watchService = FileSystems.getDefault().newWatchService();
+			watchService = FileSystems.getDefault().newWatchService();
+
 			Path rawDir = Paths.get(dirName);
 			rawDir.register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
 
 			WatchKey key;
 
 			while ((key = watchService.take()) != null) {
+
 				for (WatchEvent<?> event : key.pollEvents()) {
-					Path comicPath = Paths.get(rawDir.toString(), event.context().toString());
-					File lockFile = comicPath.toFile();
-					RandomAccessFile raf = new RandomAccessFile(lockFile, "rw");
-					FileChannel channel = raf.getChannel();
-					channel.lock();
-					raf.close();
-					rabbitTemplate.convertAndSend(exchangeName, "found", comicPath.toString());
+					Path eventPath = Paths.get(rawDir.toString(), event.context().toString());
+					System.out.println("EventPath: " + eventPath.toString());
+					if (Files.isDirectory(eventPath)) {
+						System.out.println("DIR!");
+						// THERE ARE LOCK ISSUES SOMEWHERE AROUND HERE
+						DirectoryStream<Path> stream = Files.newDirectoryStream(eventPath);
+						stream.forEach(path -> {
+							try {
+								System.out.println("in lamda: " + path.toString());
+								sendMessage(path);
+
+							} catch (IOException e) { // TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+
+						});
+					} else {
+						System.out.println("NOT DIR!");
+						sendMessage(Paths.get(rawDir.toString(), eventPath.toString()));
+					}
 				}
 				key.reset();
 			}
-
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -59,5 +76,16 @@ public class ComicWatcherService {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+	}
+
+	private void sendMessage(Path comicPath) throws IOException {
+		System.out.println("COMIC PATH: " + comicPath.toString());
+		File lockFile = comicPath.toFile();
+		RandomAccessFile raf = new RandomAccessFile(lockFile, "rw");
+		FileChannel channel = raf.getChannel();
+		channel.lock();
+		raf.close();
+		rabbitTemplate.convertAndSend(exchangeName, "found", comicPath.toString());
 	}
 }
