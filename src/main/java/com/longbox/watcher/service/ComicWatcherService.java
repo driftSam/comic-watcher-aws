@@ -41,15 +41,12 @@ public class ComicWatcherService {
 
 			while ((key = watchService.take()) != null) {
 				for (WatchEvent<?> event : key.pollEvents()) {
-					System.out.println("New Comic Found!");
-					System.out.println("File: " + event.context());
 					Path comicPath = Paths.get(rawDir.toString(), event.context().toString());
 					File lockFile = comicPath.toFile();
 					RandomAccessFile raf = new RandomAccessFile(lockFile, "rw");
 					FileChannel channel = raf.getChannel();
 					channel.lock();
 					raf.close();
-					System.out.println(comicPath.toString());
 					rabbitTemplate.convertAndSend(exchangeName, "found", comicPath.toString());
 				}
 				key.reset();
