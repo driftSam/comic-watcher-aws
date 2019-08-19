@@ -1,10 +1,10 @@
 package com.longbox.watcher.service;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
-import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +13,7 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.stream.Stream;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,59 +34,79 @@ public class ComicWatcherService {
 	@Autowired
 	RabbitTemplate rabbitTemplate;
 
+	@SuppressWarnings("unchecked")
 	public void watch() {
-		WatchService watchService;
 		try {
-			watchService = FileSystems.getDefault().newWatchService();
-
-			Path rawDir = Paths.get(dirName);
-			rawDir.register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
-
-			WatchKey key;
+			WatchService watchService = FileSystems.getDefault().newWatchService();
+			Path dir = Paths.get(dirName);
+			WatchKey key = dir.register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
 
 			while ((key = watchService.take()) != null) {
 
 				for (WatchEvent<?> event : key.pollEvents()) {
-					Path eventPath = Paths.get(rawDir.toString(), event.context().toString());
+					Path eventPath = ((WatchEvent<Path>) event).context();
+					Path child = dir.resolve(eventPath);
+					System.out.println("Dir: " + dir.toString());
 					System.out.println("EventPath: " + eventPath.toString());
-					if (Files.isDirectory(eventPath)) {
+					System.out.println("Child: " + child.toString());
+					if (Files.isDirectory(child)) {
 						System.out.println("DIR!");
-						// THERE ARE LOCK ISSUES SOMEWHERE AROUND HERE
-						DirectoryStream<Path> stream = Files.newDirectoryStream(eventPath);
-						stream.forEach(path -> {
-							try {
-								System.out.println("in lamda: " + path.toString());
-								sendMessage(path);
+						// TimeUnit.SECONDS.sleep(5);
+						Stream<Path> paths = Files.walk(child);
 
-							} catch (IOException e) { // TODO Auto-generated catch block
-								e.printStackTrace();
-							}
+						paths.filter(Files::isRegularFile).forEach(path -> {
+							locker(path);
+							System.out.println(path.toString());
 
+							sendMessage(path);
 						});
+						;
+						paths.close();
 					} else {
 						System.out.println("NOT DIR!");
-						sendMessage(Paths.get(eventPath.toString()));
+						locker(child);
+						sendMessage(child);
 					}
 				}
+
 				key.reset();
+				System.out.println("done");
 			}
-		} catch (IOException e) {
+		} catch (
+
+		IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 
 	}
 
-	private void sendMessage(Path comicPath) throws IOException {
+	private void sendMessage(Path comicPath) {
 		System.out.println("COMIC PATH: " + comicPath.toString());
-		File lockFile = comicPath.toFile();
-		RandomAccessFile raf = new RandomAccessFile(lockFile, "rw");
-		FileChannel channel = raf.getChannel();
-		channel.lock();
-		raf.close();
+
 		rabbitTemplate.convertAndSend(exchangeName, "found", comicPath.toString());
+
+	}
+
+	private void locker(Path path) {
+		File lockFile = path.toFile();
+		RandomAccessFile raf;
+		try {
+			raf = new RandomAccessFile(lockFile, "rw");
+
+			FileChannel channel = raf.getChannel();
+			channel.lock();
+			raf.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 }
