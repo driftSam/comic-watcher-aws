@@ -15,8 +15,6 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.stream.Stream;
 
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -30,9 +28,6 @@ public class ComicWatcherService {
 
 	@Value("${queue.name}")
 	String queueName;
-
-	@Autowired
-	RabbitTemplate rabbitTemplate;
 
 	@SuppressWarnings("unchecked")
 	public void watch() {
@@ -58,14 +53,12 @@ public class ComicWatcherService {
 							locker(path);
 							System.out.println(path.toString());
 
-							sendMessage(path);
 						});
 						;
 						paths.close();
 					} else {
 						System.out.println("NOT DIR!");
 						locker(child);
-						sendMessage(child);
 					}
 				}
 
@@ -81,13 +74,6 @@ public class ComicWatcherService {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-
-	}
-
-	private void sendMessage(Path comicPath) {
-		System.out.println("COMIC PATH: " + comicPath.toString());
-
-		rabbitTemplate.convertAndSend(exchangeName, "found", comicPath.toString());
 
 	}
 
