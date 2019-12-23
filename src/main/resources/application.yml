@@ -1,0 +1,16 @@
+raw:
+  comics:
+    dir: /mnt/Comics/Organizer/Raw
+
+amazonProperties:
+  endpointUrl: https://s3.us-east-1.amazonaws.com
+  accessKey: 
+  secretKey: 
+  bucketName: long-box
+
+cloud:
+  aws:
+    stack:
+      auto: false
+    region:
+      static: us-east-1
