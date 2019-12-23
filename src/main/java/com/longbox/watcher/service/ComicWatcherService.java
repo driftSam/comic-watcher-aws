@@ -23,12 +23,6 @@ public class ComicWatcherService {
 	@Value("${raw.comics.dir}")
 	String dirName;
 
-	@Value("${exchange.name}")
-	String exchangeName;
-
-	@Value("${queue.name}")
-	String queueName;
-
 	@SuppressWarnings("unchecked")
 	public void watch() {
 		try {
