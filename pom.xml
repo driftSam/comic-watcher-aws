@@ -8,10 +8,10 @@
 		<version>2.1.6.RELEASE</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.longbox.watcher</groupId>
-	<artifactId>comic-watcher</artifactId>
+	<groupId>com.longbox.aws.watcher</groupId>
+	<artifactId>comic-watcher-aws</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>comic-watcher</name>
+	<name>comic-watcher-aws</name>
 	<description>Service to watch a dir for Comics</description>
 
 	<properties>
