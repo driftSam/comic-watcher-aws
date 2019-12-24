@@ -90,6 +90,7 @@ public class ComicWatcherService {
 					} else {
 						System.out.println("NOT DIR!");
 						locker(child);
+						s3client.putObject(new PutObjectRequest(bucketName, child.getFileName().toString(), child.toFile()));
 					}
 				}
 
