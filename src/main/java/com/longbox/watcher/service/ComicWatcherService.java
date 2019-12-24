@@ -25,6 +25,7 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 
 @Service
 public class ComicWatcherService {
@@ -37,6 +38,8 @@ public class ComicWatcherService {
 	String secretKey;
 	@Value("${amazonProperties.endpointUrl}")
 	String endpointUrl;
+	@Value("${amazonProperties.bucketName}")
+	String bucketName;
 	
 	private AmazonS3 s3client;
 
@@ -79,6 +82,7 @@ public class ComicWatcherService {
 						paths.filter(Files::isRegularFile).forEach(path -> {
 							locker(path);
 							System.out.println(path.toString());
+							s3client.putObject(new PutObjectRequest(bucketName, path.getFileName().toString(), path.toFile()));
 
 						});
 						;
