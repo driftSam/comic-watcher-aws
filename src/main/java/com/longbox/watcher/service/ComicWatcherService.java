@@ -15,16 +15,11 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.stream.Stream;
 
-import javax.annotation.PostConstruct;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
 @Service
@@ -41,24 +36,10 @@ public class ComicWatcherService {
 	@Value("${amazonProperties.bucketName}")
 	String bucketName;
 	
-	private AmazonS3 s3client;
-
 	@Autowired
-	public ComicWatcherService(AmazonS3 s3client) {
-		this.s3client = s3client;
-	}
+	public AmazonS3 s3client;
+
 	
-	@PostConstruct
-	private void initializeAmazon() {
-		BasicAWSCredentials credentials = new BasicAWSCredentials(this.accessKey, this.secretKey);
-		this.s3client = AmazonS3ClientBuilder
-				.standard()
-				.withCredentials(new AWSStaticCredentialsProvider(credentials))
-				.withRegion("us-east-1")
-				.build();
-	}
-
-
 	@SuppressWarnings("unchecked")
 	public void watch() {
 		try {
